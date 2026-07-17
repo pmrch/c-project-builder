@@ -17,21 +17,9 @@
     #define PRINTF_LIKE(fmt_idx, arg_idx)
 #endif
 
-#include <stdio.h>
-#include <stdarg.h>
-
 // Forward declaration of the internal worker function
-inline void log_internal(const char* level_str, const char* color, const char* file, int line, const char* func, const char* fmt, ...) 
-PRINTF_LIKE(6, 7) {
-    fprintf(stderr, "%s[%s]\x1b[0m %s:%d:%s: ", color, level_str, file, line, func);
-    
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-    
-    fprintf(stderr, "\n");    
-};
+void log_internal(const char* level_str, const char* color, const char* file, int line, const char* func, const char* fmt, ...)
+PRINTF_LIKE(6, 7); 
 
 #if LOG_LEVEL <= LOG_LEVEL_DEBUG
 #define LOG_DEBUG(fmt, ...) log_internal("DEBUG", "\x1b[36m", __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
