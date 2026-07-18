@@ -7,7 +7,7 @@
         -Wlogical-op -Wno-padded -Wno-declaration-after-statement -Weverything -Wno-unknown-warning-option \
         -Wno-padded -Wno-disabled-macro-expansion"
 
-    #define MODERATE_FLAGS "-Wall -Wextra -Wpedantic -Werror -Wuninitialized -Wconversion     \
+    #define MODERATE_FLAGS "-Wall -Wextra -Wpedantic -Werror -Wuninitialized -Wconversion \
         -Wsign-conversion -Wcast-align -Wstrict-aliasing=2 -Wmissing-prototypes -Wswitch-enum \
         -Wredundant-decls -Wshadow -Wundef -Wformat=2 -Wwrite-strings -Wstrict-prototypes"
 
@@ -21,7 +21,7 @@
         -Wunused-variable -Wunused-parameter -Wduplicated-cond -Wduplicated-branches -Wlogical-op      \
         -Wno-padded -Wno-declaration-after-statement"
     
-    #define MODERATE_FLAGS "-Wall -Wextra -Wpedantic -Werror -Wuninitialized -Wconversion     \
+    #define MODERATE_FLAGS "-Wall -Wextra -Wpedantic -Werror -Wuninitialized -Wconversion  \
         -Wsign-conversion -Wcast-align -Wstrict-aliasing=2 -Wmissing-prototypes -Wswitch-enum \
         -Wredundant-decls -Wshadow -Wundef -Wformat=2 -Wwrite-strings -Wstrict-prototypes"
 

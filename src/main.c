@@ -1,39 +1,42 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
 
 #include "log.h"
 #include "path.h"
 #include "config.h"
+#include "build.h"
+#include "parser.h"
 
-const char* valid_flags[] = {
-    "--strictness=", "--lang=", "--compiler=", "--with-mimalloc", "--release", "--debug"
-};
+static int is_arg(const char **argv) {
+    int valid_prefix_kw = (argv[1][0] == '-' && argv[1][1] == '-');
+    int is_path_win = (isalpha(argv[1][0]) && argv[1][1] == ':' && argv[1][2] == '\\');
+    int is_path_linux = (argv[1][0] == '/');
 
-/*static bool param_is_valid(const char** avail, const char* elem, int len) {
-    for (int i = 0; i < len; i++) {
-        if (strcmp(avail[i], elem) == 0) {
-            return true;
-        }
-    }
+    return valid_prefix_kw || is_path_win || is_path_linux;
+}
 
-    return false;
-}*/
-
-
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
     CompilerConfig *cfg = new_config("compile_project");
     if (cfg == NULL) { return -1; }
 
     char *cwd = get_cwd();
     if (cwd == NULL) { goto cleanup; return -1; }
 
-    if (argc > 1 && (!isupper(argv[1][0]) || (argv[1][0] != '-' && argv[1][1] != '-'))) {
+    if (argc > 1 && !is_arg(argv)) {
         printf("Invalid argument \"%s\" was passed!\n", argv[1]);
         goto cleanup;
     }
+
+    ya();
+    char *cflags = construct_compiler_flags(cfg, argc, argv);
+    if (cflags == NULL) {
+        LOG_ERROR("Failed to construct compiler flags");
+        goto cleanup;
+    }
+
+    printf("Current flags: %s\n", cflags);
+    free(cflags);
 
     goto cleanup;
     cleanup:

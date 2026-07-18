@@ -1,4 +1,4 @@
-#define MAX_VERSION 26
+#define MAX_VERSION 23
 #define _POSIX_C_SOURCE 200809L
 
 #include <stdio.h>
@@ -33,7 +33,7 @@ static char* get_latest_std() {
     char cmd[512];
     char *buf = malloc(4 * sizeof(char));
 
-    while (version <= MAX_VERSION) {
+    while (version >= 11 && version <= MAX_VERSION) {
         snprintf(cmd, ref_size, "gcc -std=c%u -c test.c -o test > /dev/null 2>&1", version);
         snprintf(buf, 4, "c%u", version);
 
@@ -43,13 +43,12 @@ static char* get_latest_std() {
             return buf;
         }
 
-        version -= 3;
-        sleep(1);
+        version -= 6;
     }
 
-    free(buf);
     cleanup_test();
-    return NULL;
+    memcpy(buf, "c99", sizeof("c99"));
+    return system("gcc -std=c99 -c test.c -o test > /dev/null 2>&1") == 0 ? buf : NULL;
 }
 #endif
 
