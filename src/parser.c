@@ -38,7 +38,7 @@ char* construct_compiler_flags(const CompilerConfig *cfg, const int argc, const 
         return NULL;
     }
 
-    snprintf(compiler_flags, strlen(cfg->cc) + 1, "%s ", cfg->cc);
+    snprintf(compiler_flags, strlen(cfg->cc) + 1, "%s", cfg->cc);
     while (*++argv_p != NULL) {
         if (strncmp(*argv_p, "--strictness=", 13) == 0) {
             char *level_str = strrchr(*argv_p, '=');
@@ -49,6 +49,7 @@ char* construct_compiler_flags(const CompilerConfig *cfg, const int argc, const 
                 return NULL;
             }
 
+            strcat(compiler_flags, " ");
             strcat(compiler_flags, strictness_flags);
         }
     };

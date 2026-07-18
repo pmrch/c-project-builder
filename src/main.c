@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "log.h"
 #include "path.h"
 #include "config.h"
+#include "utils.h"
 #include "build.h"
 #include "parser.h"
 
@@ -30,10 +30,7 @@ int main(int argc, const char **argv) {
 
     ya();
     char *cflags = construct_compiler_flags(cfg, argc, argv);
-    if (cflags == NULL) {
-        LOG_ERROR("Failed to construct compiler flags");
-        goto cleanup;
-    }
+    normalize_whitespaces(cflags);
 
     printf("Current flags: %s\n", cflags);
     free(cflags);
