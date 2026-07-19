@@ -29,11 +29,10 @@ int main(int argc, const char **argv) {
     }
 
     ya();
-    char *cflags = construct_compiler_flags(cfg, argc, argv);
-    normalize_whitespaces(cflags);
-
-    printf("Current flags: %s\n", cflags);
-    free(cflags);
+    CompilerOptions *opts = parse_compiler_flags(argc, argv);
+    printf("Set lang: %d | Set compiler: %d | Set config: %d | Set trictness: %d", 
+        opts->lang_set, opts->compiler_set, opts->config_set, opts->strictness_set
+    );
 
     goto cleanup;
     cleanup:

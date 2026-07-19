@@ -1,3 +1,4 @@
+#include "utils.h"
 #include <string.h>
 #define PATH_MAX 1024
 
@@ -6,9 +7,10 @@
 #include "path.h"
 
 // Support both Windows and Linux
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _MSC_VER
 #include <direct.h>
 
+// Returned buffer is malloc()'d by _getcwd(), so caller must free() it
 static char* get_cwd_win() {
     char *buffer = _getcwd(NULL, PATH_MAX);
     if (buffer == NULL) {
@@ -24,6 +26,7 @@ static char* get_cwd_win() {
 #include <stdlib.h>
 #include <unistd.h>
 
+// Returned buffer is malloc()'d by getcwd(), so caller must free() it
 static char* get_cwd_linux() {
     char *buffer = malloc(PATH_MAX);
     if (buffer == NULL || getcwd(buffer, PATH_MAX) == NULL) {
@@ -36,8 +39,10 @@ static char* get_cwd_linux() {
 
 #endif
 
+// Returned buffer is malloc()'d by the platform's compatible getcwd(), 
+// so caller must free() it
 char* get_cwd() {
-    #if defined(_WIN32) || defined(_WIN64)
+    #ifdef _MSC_VER
     return get_cwd_win();
     
     #else
@@ -46,23 +51,25 @@ char* get_cwd() {
     #endif
 }
 
+// Returned buffer is strdup()'d, caller must free() it
 char* get_basename(char *abs_path) {
-    LOG_INFO("Getting filename for %s", abs_path);
     if (abs_path == NULL) {
         LOG_ERROR("NULL was provided instead of a valid path when getting filename!");
         return NULL;
     }
 
-    #if defined(_WIN32) || defined(_WIN64)
+    #ifdef _MSC_VER
         char *last_slash = strrchr(abs_path, '\\');
-    
     #else
         char *last_slash = strrchr(abs_path, '/');
+        if (last_slash == NULL) {
+            last_slash = strrchr(abs_path, '\\'); // MinGW fallback
+        }
     #endif
 
     if (last_slash == NULL) {
-        LOG_WARN("Returning path isntead of filename, failed to extract it!");
+        LOG_WARN("Returning path instead of filename, failed to extract it!");
     }
 
-    return last_slash ? last_slash + 1 : abs_path;
+    return last_slash ? strdup_cross(++last_slash) : strdup_cross(abs_path);
 }

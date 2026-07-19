@@ -17,7 +17,7 @@ STRICT_FLAGS = -Wall -Wextra -Wpedantic -Werror -Wuninitialized -Wmaybe-uninitia
 CFLAGS = -std=c23 $(STRICT_FLAGS) -Iinclude -MMD -MP -flto -ffast-math -O3 -march=native
 
 # Linker flags (for libraries)
-LDFLAGS = -ffast-math -flto
+LDFLAGS = -flto
 
 # Target definition
 SRC := $(shell find src -name '*.c')
@@ -25,7 +25,6 @@ OBJ := $(patsubst src/%.c,build/%.o,$(SRC))
 TARGET = build_c_project
 
 $(TARGET): $(OBJ)
-	@echo "WTF" $(CC) $(OBJ)
 	$(CC) $(OBJ) $(LDFLAGS) -o $@
 
 print-version:

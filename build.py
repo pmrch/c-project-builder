@@ -61,8 +61,8 @@ def compile_and_link() -> Optional[bool]:
         })
         
         try:
-            subprocess.run(exec_command.split(' '), cwd=cwd, capture_output=True, check=True)
-            log.info(f"Compiled src/{src_path.name} => build/{obj_name}")
+            result = subprocess.run(exec_command.split(' '), cwd=cwd, capture_output=True, check=True, text=True)
+            log.info(f"Compiled src/{result.stdout.strip()} => build/{obj_name}")
         except Exception as e:
             log.error(f"Failed to compile {src_path.name} due to error: {e}")
             return True
@@ -75,7 +75,6 @@ def compile_and_link() -> Optional[bool]:
     exec_command: str = f"{LINK} {LDFLAGS} /out:{TARGET}.exe {objects}"
 
     try:
-        print(exec_command)
         _ = subprocess.run(exec_command.split(' '), cwd=cwd, capture_output=True, check=True)
         log.info("Finished linking successfully")
     except Exception as e:
