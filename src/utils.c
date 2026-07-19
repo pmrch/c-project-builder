@@ -1,12 +1,14 @@
+#include <stdio.h>
+#include <stdlib.h>
+#define _POSIX_C_SOURCE 200809L
+
 #include <ctype.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 
 #include "utils.h"
 #include "log.h"
 
-#if _MSC_VER
+#ifdef _MSC_VER
 #include <intrin.h>
 #include <corecrt.h>
 #include <stdbool.h>
@@ -70,6 +72,21 @@ char *strdup_cross(const char *str) {
     #endif
 }
 
+char** clone_string_array_mutable(const char *restrict *arr, usize num_elem) {
+    char **mutable_arr = malloc((num_elem + 1) * sizeof(char*));
+    if (mutable_arr == NULL) {
+        LOG_ERROR("Failed to allocate memory for the copy of the array!");
+        return NULL;
+    }
+
+    for (usize i = 0; i < num_elem; i++) {
+        mutable_arr[i] = strdup_cross(arr[i]);
+    }
+
+    mutable_arr[num_elem] = NULL;
+    return mutable_arr;
+}
+
 int strcat_cross(char *restrict dest, usize dest_size, const char *restrict src) {
     #ifdef _MSC_VER
     errno_t result = strcat_s(dest, dest_size, src);
@@ -83,10 +100,34 @@ int strcat_cross(char *restrict dest, usize dest_size, const char *restrict src)
     #endif
 }
 
+int create_test_file() {
+    FILE *f = fopen("test.c", "w");
+    if (f != NULL) {
+        fprintf(f, "int main(void) { return 0; }\n");
+        fclose(f);
+
+        return 0;
+    }
+
+    #ifndef _MSC_VER
+    if (system("touch test.c && echo -E \"int main(void) { return 0; }\" > test.c") == 0) {
+        return 0;
+    }
+
+    #else 
+    if (system("echo int main(void) { return 0; } > test.c") == 0) {
+        return 0;
+    }
+
+    #endif
+
+    return -1;
+}
+
 // If a sequence of whitespace is found, they get reduced to a singular whitespace
 void normalize_whitespaces(char *restrict s) {
-    if (s == NULL) {
-        LOG_WARN("Not normalizing whitespaces, passed NULL");
+    if (s == NULL || *s == '\0') {
+        LOG_WARN("Not normalizing whitespaces, passed NULL or empty string");
         return;
     }
 
@@ -104,15 +145,15 @@ void normalize_whitespaces(char *restrict s) {
             found_whitespace = 0;
         }
 
-        read_ptr++;
+        ++read_ptr;
     }
 
     *write_ptr = '\0';
 }
 
 void to_lowercase(char *restrict str) {
-    if (str == NULL) {
-        LOG_WARN("Cannot convert string to lowercase, NULL was passed");
+    if (str == NULL || *str == '\0') {
+        LOG_WARN("Cannot convert string to lowercase, NULL or empty string was passed");
         return;
     }
 
@@ -120,4 +161,24 @@ void to_lowercase(char *restrict str) {
         *str = (char)tolower((i32)*str);
         ++str;
     }
+}
+
+void strip_quotes(char *restrict str) {
+    if (str == NULL || *str == '\0') {
+        LOG_WARN("Not removing double quotes, passed NULL or empty string");
+        return;
+    }
+
+    char *read_ptr  = str;
+    char *write_ptr = str;
+
+    while (*read_ptr != '\0') {
+        if (!(*read_ptr == '"' || *read_ptr == '\'')) {
+            *write_ptr++ = *read_ptr;
+        }
+
+        ++read_ptr;
+    }
+
+    *write_ptr = '\0';
 }

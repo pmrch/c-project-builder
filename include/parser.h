@@ -1,22 +1,22 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <stdint.h>
 
 #include "utils.h"
 
 typedef struct {
-    const char *lang;
-    const char *config;
-    const char *compiler;
-    u8      strictness;
-    bool    lang_set;
-    bool    config_set;
-    bool    compiler_set;
-    bool    strictness_set;
-    bool    mimalloc_requested;
+    const char  *compiler;
+    const char  *mimalloc_lib_path; // Library search path for mimalloc (-L or /LIBPATH:)
+    Lang        lang;  
+    Config      config;
+    Strictness  strictness;   
+    bool        lang_set;
+    bool        config_set;
+    bool        compiler_set;
+    bool        strictness_set;
+    bool        use_system_mimalloc;
 } CompilerOptions;
 
-CompilerOptions* parse_compiler_flags(const int argc, const char **argv);
+CompilerOptions* parse_compiler_flags(const int argc, const char *restrict *argv);
 
 #endif

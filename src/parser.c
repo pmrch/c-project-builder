@@ -1,7 +1,5 @@
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 #include "parser.h"
 #include "flags.h"
@@ -10,32 +8,10 @@
 
 #define COMPILER_FLAGS_SIZE 2048
 
-static const char* delegate_strictness_flags(const char* level_str) {
-    if (level_str != NULL && *level_str != '\0') {
-        char *end;
-
-        errno = 0;
-        long level = strtol(level_str, &end, 10);
-        int is_intger = (errno != ERANGE && *end == '\0');
-
-        if (is_intger) {
-            if (level == 3) { return STRICT_FLAGS; }
-            else if (level == 2) { return MODERATE_FLAGS; }
-            else if (level == 1) { return LINT_FLAGS; }
-            else { return " "; }
-        } else {
-            LOG_WARN("You must pass an integer as argument for --strictness! Using defaults");
-            return " ";
-        }
-    }
-    
-    return " ";
-}
-
 static bool is_compiler_valid(const char *str) {
     const char* const valid_compilers[] = { "gcc", "clang", "cl" };
     for (usize i = 0; i < 3; i++) {
-        if (strncmp(str, valid_compilers[i], strlen(str)) == 0) {
+        if (strncmp(str, valid_compilers[i], strlen(valid_compilers[i])) == 0) {
             return true;
         }
     }
@@ -43,18 +19,18 @@ static bool is_compiler_valid(const char *str) {
     return false;
 }
 
-static void set_strictness(const char **argv_p, CompilerOptions *opts) {
+static void set_strictness(char *restrict *argv_p, CompilerOptions *opts) {
     char *level_str = strrchr(*argv_p, '=');
     if (level_str == NULL) {
         LOG_WARN("Couldn't parse the value for flag %s", *argv_p);
         return;
     }
 
-    opts->strictness = (u8)atoi(++level_str);
+    opts->strictness = validate_strictness(++level_str);
     opts->strictness_set = true;
 }
 
-static void set_config(const char **argv_p, CompilerOptions *opts) {
+static void set_config(char *restrict *argv_p, CompilerOptions *opts) {
     char *config = strrchr(*argv_p, '=');
     if (config == NULL) {
         LOG_WARN("Couldn't parse the value for flag %s", *argv_p);
@@ -62,19 +38,26 @@ static void set_config(const char **argv_p, CompilerOptions *opts) {
     }
 
     to_lowercase(++config);
-    opts->config = config;
+    if (strncmp(config, "release", 7) == 0) { opts->config = Release; } 
+    else if (strncmp(config, "debug", 5) == 0) { opts->config = Debug; } 
+    else {
+        LOG_WARN("Invalid config value '%s' provided, defaulting to Release build", config);
+        opts->config = Release;
+    }
+
     opts->config_set = true;
 }
 
-static void set_compiler(const char **argv_p, CompilerOptions *opts) {
+static void set_compiler(char *restrict *argv_p, CompilerOptions *opts) {
     char *compiler = strrchr(*argv_p, '=');
     if (compiler == NULL) {
         LOG_WARN("Couldn't parse the value for flag %s", *argv_p);
         return;
     }
 
-    if (!is_compiler_valid(++compiler)) {
-        LOG_WARN("Invalid compiler '%s' provided, using system default", *compiler);
+    to_lowercase(++compiler);
+    if (!is_compiler_valid(compiler)) {
+        LOG_WARN("Invalid compiler '%s' provided, using system default", compiler);
 
         #ifdef __GNUC__
         opts->compiler = "gcc";
@@ -82,7 +65,7 @@ static void set_compiler(const char **argv_p, CompilerOptions *opts) {
         #elif defined(__clang__)
         opts->compiler = "clang";
 
-        #else
+        #elif defined(_MSC_VER)
         opts->compiler = "cl.exe";
 
         #endif
@@ -93,38 +76,51 @@ static void set_compiler(const char **argv_p, CompilerOptions *opts) {
     opts->compiler_set = true;
 }
 
-static void set_lang(const char **argv_p, CompilerOptions *opts) {
+static void set_lang(char *restrict *argv_p, CompilerOptions *opts) {
     char *lang = strrchr(*argv_p, '=');
+    if (lang == NULL) {
+        LOG_WARN("Couldn't parse the value for flag %s", *argv_p);
+        return;
+    }
+
     if (strlen(++lang) > 3) {
         LOG_WARN("Invalid --lang value '%s'", lang);
         return;
     }
 
-    bool is_c = strncmp(lang, "c", 1);
-    bool is_cpp = strncmp(lang, "c++", 3)
-        || strncmp(lang, "cpp", 3)
-        || strncmp(lang, "cxx", 3);
+    to_lowercase(lang);
+    bool is_c = strcmp(lang, "c") == 0;
+    bool is_cpp = strncmp(lang, "c++", 3) == 0
+        || strncmp(lang, "cpp", 3) == 0
+        || strncmp(lang, "cxx", 3) == 0;
 
-    if (!is_cpp && is_c) {
-        opts->lang = "c";
-        opts->lang_set = true;
-    } else if (is_cpp) {
-        opts->lang = "cpp";
-        opts->lang_set = true;
+    if (is_cpp) { opts->lang = Cpp; }
+    else if (is_c) { opts->lang = C; }
+    else {
+        LOG_WARN("Neither C nor C++ was provided in any accepted form, defaulting to C");
+        opts->lang = C;
     }
+
+    opts->lang_set = true;
 }
 
-CompilerOptions* parse_compiler_flags(const int argc, const char **argv) {
+CompilerOptions* parse_compiler_flags(const int argc, const char *restrict *argv) {
     CompilerOptions *opts = calloc(1, sizeof(CompilerOptions));
     if (opts == NULL) {
         LOG_ERROR("Failed to allocate memory for CompilerOptions!");
         return NULL;
     }
 
-    const char **argv_p = argv;
+    char **argv_p = clone_string_array_mutable(argv, (usize)argc);
+    if (argv_p == NULL) {
+        free(opts);
+        return NULL;
+    }
+
     while (*++argv_p != NULL) {
-        if (strncmp(*argv_p, "--with-mimalloc", 15) == 0 && !opts->mimalloc_requested) {
-            opts->mimalloc_requested = true;
+        strip_quotes(*argv_p);
+        if (strncmp(*argv_p, "--with-system-mimalloc", 23) == 0 && !opts->use_system_mimalloc) {
+            opts->use_system_mimalloc = true;
         }
 
         if (strncmp(*argv_p, "--strictness=", 13) == 0 && !opts->strictness_set) {

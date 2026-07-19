@@ -1,3 +1,5 @@
+#include "utils.h"
+
 #ifdef __clang__
     #define STRICT_FLAGS "-Wall -Wextra -Wpedantic -Werror -Wuninitialized -Wold-style-definition          \
         -Wsign-conversion -Wcast-align -Wcast-qual -Wstrict-aliasing=2 -Wpointer-arith -Warray-bounds      \
@@ -44,13 +46,22 @@
         -Wsign-conversion -Wcast-align -Wstrict-aliasing=2 -Wswitch-enum -Wredundant-decls    \
         -Wshadow -Wundef -Wformat=2 -Wwrite-strings"
 
+    #define CFLAGS_BASE "-Iinclude -MMD -MP"
+
     #define OPTIMIZATION_FLAGS "-flto -ffast-math -O3 -march=native"
-    #define LDFLAGS "-flto"
+    #define LINKER_FLAGS "-flto"
+
     #define DEBUG_FLAGS_CC "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined"
     #define DEBUG_FLAGS_LNK "-fsanitize=address -fsanitize=undefined"
 #else
+    #define CFLAGS_BASE "/nologo /LTCG"
+
     #define OPTIMIZATION_FLAGS "/O2 /Oi /Ot /GL /Gy /fp:fast"
     #define LINKER_FLAGS "/LTCG /OPT:REF /OPT:ICF"
+
     #define DEBUG_FLAGS_CC "/Od /Zi /RTC1 /fsanitize:address"
     #define DEBUG_FLAGS_LNK "/DEBUG /fsanitize:address"
 #endif
+
+u8 validate_strictness(const char* level_str);
+const char* delegate_strictness_flags(const Strictness level);

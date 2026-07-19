@@ -1,10 +1,11 @@
-#include "utils.h"
-#include <string.h>
 #define PATH_MAX 1024
 
 // Common imports
+#include <string.h>
+
 #include "log.h"
 #include "path.h"
+#include "utils.h"
 
 // Support both Windows and Linux
 #ifdef _MSC_VER

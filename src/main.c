@@ -4,7 +4,6 @@
 
 #include "path.h"
 #include "config.h"
-#include "utils.h"
 #include "build.h"
 #include "parser.h"
 
@@ -30,7 +29,7 @@ int main(int argc, const char **argv) {
 
     ya();
     CompilerOptions *opts = parse_compiler_flags(argc, argv);
-    printf("Set lang: %d | Set compiler: %d | Set config: %d | Set trictness: %d", 
+    printf("Set lang: %d | Set compiler: %d | Set config: %d | Set trictness: %d\n", 
         opts->lang_set, opts->compiler_set, opts->config_set, opts->strictness_set
     );
 

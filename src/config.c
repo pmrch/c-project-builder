@@ -1,5 +1,4 @@
 #define MAX_VERSION 23
-#define _POSIX_C_SOURCE 200809L
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -11,7 +10,6 @@
 
 #ifndef _MSC_VER
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 
 static void cleanup_test() {
@@ -21,11 +19,7 @@ static void cleanup_test() {
 }
 
 static char* get_latest_std(const char *cc) {
-    FILE *f = fopen("test.c", "w");
-    if (f != NULL) {
-        fprintf(f, "int main(void) { return 0; }\n");
-        fclose(f);
-    } else if (system("touch test.c && echo -E \"int main(void) { return 0; }\" > test.c") != 0) {
+    if (create_test_file() != 0) {
         return strdup_cross("c99");
     }
 
@@ -86,7 +80,7 @@ CompilerConfig* new_config(const char *project_name) {
 
     #else
     const char *compiler = system("gcc --version >/dev/null 2>&1") == 0 ? "gcc" : "clang";
-    char *std = get_latest_std();
+    char *std = get_latest_std(compiler);
 
     cfg_base->std = std ? std : "c99";
     cfg_base->cc = compiler;
