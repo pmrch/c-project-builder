@@ -19,25 +19,14 @@ static bool is_compiler_valid(const char *str) {
     return false;
 }
 
-static void set_strictness(char *restrict *argv_p, CompilerOptions *opts) {
-    char *level_str = strrchr(*argv_p, '=');
-    if (level_str == NULL) {
-        LOG_WARN("Couldn't parse the value for flag %s", *argv_p);
-        return;
-    }
-
-    opts->strictness = validate_strictness(++level_str);
+static void set_strictness(char *restrict strictness, CompilerOptions *opts) {
+    opts->strictness = validate_strictness(strictness);
     opts->strictness_set = true;
 }
 
-static void set_config(char *restrict *argv_p, CompilerOptions *opts) {
-    char *config = strrchr(*argv_p, '=');
-    if (config == NULL) {
-        LOG_WARN("Couldn't parse the value for flag %s", *argv_p);
-        return;
-    }
+static void set_config(char *restrict config, CompilerOptions *opts) {
+    to_lowercase(config);
 
-    to_lowercase(++config);
     if (strncmp(config, "release", 7) == 0) { opts->config = Release; } 
     else if (strncmp(config, "debug", 5) == 0) { opts->config = Debug; } 
     else {
@@ -48,14 +37,8 @@ static void set_config(char *restrict *argv_p, CompilerOptions *opts) {
     opts->config_set = true;
 }
 
-static void set_compiler(char *restrict *argv_p, CompilerOptions *opts) {
-    char *compiler = strrchr(*argv_p, '=');
-    if (compiler == NULL) {
-        LOG_WARN("Couldn't parse the value for flag %s", *argv_p);
-        return;
-    }
-
-    to_lowercase(++compiler);
+static void set_compiler(char *restrict compiler, CompilerOptions *opts) {
+    to_lowercase(compiler);
     if (!is_compiler_valid(compiler)) {
         LOG_WARN("Invalid compiler '%s' provided, using system default", compiler);
 
@@ -76,14 +59,8 @@ static void set_compiler(char *restrict *argv_p, CompilerOptions *opts) {
     opts->compiler_set = true;
 }
 
-static void set_lang(char *restrict *argv_p, CompilerOptions *opts) {
-    char *lang = strrchr(*argv_p, '=');
-    if (lang == NULL) {
-        LOG_WARN("Couldn't parse the value for flag %s", *argv_p);
-        return;
-    }
-
-    if (strlen(++lang) > 3) {
+static void set_lang(char *restrict lang, CompilerOptions *opts) {
+    if (strlen(lang) > 3) {
         LOG_WARN("Invalid --lang value '%s'", lang);
         return;
     }
@@ -104,6 +81,18 @@ static void set_lang(char *restrict *argv_p, CompilerOptions *opts) {
     opts->lang_set = true;
 }
 
+// Expects a path that contains the dynamically or statically linkable
+// mimalloc library .a/.so/.lib file(s)
+static void set_mimalloc(char *restrict path, CompilerOptions *opts) {
+    #if !defined(_WIN32) && !defined(_WIN64)
+    if ()
+    
+    #else
+    
+
+    #endif
+}
+
 CompilerOptions* parse_compiler_flags(const int argc, const char *restrict *argv) {
     CompilerOptions *opts = calloc(1, sizeof(CompilerOptions));
     if (opts == NULL) {
@@ -117,29 +106,41 @@ CompilerOptions* parse_compiler_flags(const int argc, const char *restrict *argv
         return NULL;
     }
 
+    // Preserve the start of the pointer for when it has to be free()'d
+    char **argv_start = argv_p;
+
+    // Pre-increment to skip first argument which is the executable name itself
     while (*++argv_p != NULL) {
         strip_quotes(*argv_p);
+        char *value = strrchr(*argv_p, '=');
+        if (value != NULL) { ++value; }
+
         if (strncmp(*argv_p, "--with-system-mimalloc", 23) == 0 && !opts->use_system_mimalloc) {
             opts->use_system_mimalloc = true;
         }
 
+        if (strncmp(*argv_p, "--with-mimalloc=", 17) == 0 && opts->mimalloc_lib_path == NULL) {
+            set_mimalloc(value, opts);
+        }
+
         if (strncmp(*argv_p, "--strictness=", 13) == 0 && !opts->strictness_set) {
-            set_strictness(argv_p, opts);
+            set_strictness(value, opts);
         }
 
         if (strncmp(*argv_p, "--compiler=", 11) == 0 && !opts->compiler_set) {
-            set_compiler(argv_p, opts);
+            set_compiler(value, opts);
         }
 
         if (strncmp(*argv_p, "--config=", 9) == 0 && !opts->config_set) {
-            set_config(argv_p, opts);
+            set_config(value, opts);
         }
 
         if (strncmp(*argv_p, "--lang=", 7) == 0 && !opts->lang_set) {
-            set_lang(argv_p, opts);
+            set_lang(value, opts);
         }
     };
 
+    free_mutable_cloned_string_array(argv_start);
     LOG_INFO("We got %d args", argc);
     return opts;
 }

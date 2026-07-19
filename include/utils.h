@@ -6,6 +6,7 @@
 // ===========================================
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 // ===========================================
 // =      Convenient Type Definitions        =
@@ -53,6 +54,10 @@ const char* get_best_isa();
 // =        General Shared Utility           =
 // ===========================================
 
+// Frees all heap-allocated strings of a heap-allocated buffer, 
+// and the buffer itself
+void free_mutable_cloned_string_array(char *restrict *arr);
+
 // If a sequence of whitespace is found, they get reduced to a singular whitespace
 void normalize_whitespaces(char *restrict s);
 void to_lowercase(char *restrict str);
@@ -60,6 +65,8 @@ void strip_quotes(char *restrict s);
 
 char* strdup_cross(const char *str);
 char** clone_string_array_mutable(const char *restrict *arr, usize num_elem);
+
+FILE* fopen_cross(const char *restrict path, const char *restrict mode);
 
 int create_test_file();
 int strcat_cross(char *restrict dest, size_t dest_size, const char *restrict src);

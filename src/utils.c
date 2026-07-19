@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
 #define _POSIX_C_SOURCE 200809L
 
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "utils.h"
 #include "log.h"
@@ -87,6 +87,17 @@ char** clone_string_array_mutable(const char *restrict *arr, usize num_elem) {
     return mutable_arr;
 }
 
+FILE* fopen_cross(const char *restrict path, const char *restrict mode) {
+    #ifdef _MSC_VER
+    FILE *file;
+    errno_t result = fopen_s(&file, path, mode);
+    return result == 0 ? file : NULL;
+
+    #else
+    return fopen(path, mode);
+    #endif
+}
+
 int strcat_cross(char *restrict dest, usize dest_size, const char *restrict src) {
     #ifdef _MSC_VER
     errno_t result = strcat_s(dest, dest_size, src);
@@ -101,7 +112,7 @@ int strcat_cross(char *restrict dest, usize dest_size, const char *restrict src)
 }
 
 int create_test_file() {
-    FILE *f = fopen("test.c", "w");
+    FILE *f = fopen_cross("test.c", "w");
     if (f != NULL) {
         fprintf(f, "int main(void) { return 0; }\n");
         fclose(f);
@@ -181,4 +192,13 @@ void strip_quotes(char *restrict str) {
     }
 
     *write_ptr = '\0';
+}
+
+void free_mutable_cloned_string_array(char *restrict *arr) {
+    char **p = (char **)arr;
+    while (*p != NULL) {
+        free(*p++);
+    }
+
+    free((char **)arr);
 }
