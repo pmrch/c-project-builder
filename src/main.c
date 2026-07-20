@@ -1,31 +1,35 @@
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "log.h"
 #include "path.h"
-#include "config.h"
 #include "build.h"
+#include "utils.h"
+#include "config.h"
 #include "parser.h"
 
-static int is_arg(const char **argv) {
-    int valid_prefix_kw = (argv[1][0] == '-' && argv[1][1] == '-');
-    int is_path_win = (isalpha(argv[1][0]) && argv[1][1] == ':' && argv[1][2] == '\\');
-    int is_path_linux = (argv[1][0] == '/');
+static i32 verify_arguments(const char *restrict const *argv, const i32 argc) {
+    char **invalid_flags = malloc(argc * sizeof(argv[0]));
+    if (invalid_flags == NULL) {
+        LOG_ERROR("Failed to allocate memory for ");
+    }
 
-    return valid_prefix_kw || is_path_win || is_path_linux;
+    for (i32 i = 0; i < argc; i++) {
+        const char *arg = invalid_flags[i];
+
+        if (arg[0] != '-' )
+    }
+
+    return 0;
 }
 
-int main(int argc, const char **argv) {
+i32 main(i32 argc, const char **argv) {
     CompilerConfig *cfg = new_config("compile_project");
     if (cfg == NULL) { return -1; }
 
     char *cwd = get_cwd();
     if (cwd == NULL) { goto cleanup; return -1; }
-
-    if (argc > 1 && !is_arg(argv)) {
-        printf("Invalid argument \"%s\" was passed!\n", argv[1]);
-        goto cleanup;
-    }
+    if (verify_arguments(argv, argc) != 0) { goto cleanup; }
 
     ya();
     CompilerOptions *opts = parse_compiler_flags(argc, argv);
