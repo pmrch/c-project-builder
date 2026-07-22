@@ -1,11 +1,13 @@
-#define PATH_MAX 1024
-
 // Common imports
 #include <string.h>
 
 #include "log.h"
 #include "path.h"
 #include "utils.h"
+
+#ifndef PATH_MAX
+    #define PATH_MAX 4096
+#endif
 
 // Support both Windows and Linux
 #ifdef _MSC_VER
@@ -23,8 +25,8 @@ static char* get_cwd_win() {
 }
 
 #else
-
 #include <stdlib.h>
+#include <dirent.h>
 #include <unistd.h>
 
 // Returned buffer is malloc()'d by getcwd(), so caller must free() it
@@ -36,6 +38,40 @@ static char* get_cwd_linux() {
     }
 
     return buffer;
+}
+
+static bool is_path_valid_unix(char *path) {
+    if (path[0] != '/') { return false; }
+
+    char *ptr = path;
+    usize num_slashes = 0;
+    usize dir_depth = 0;
+
+    bool currently_in_dir = false;
+    while (*ptr != '\0') {
+        if (*ptr == '/') { 
+            currently_in_dir = false;
+            ++num_slashes;
+        }
+
+        if (*ptr != '/' && !currently_in_dir) {
+            currently_in_dir = true;
+            ++dir_depth;
+        }
+
+        ++ptr;
+    }
+
+    // First condition is technically impossible, but it won't hurt
+    if ((dir_depth > num_slashes) || dir_depth == 0) {
+        return false;
+    }
+
+    DIR *dir = opendir(path);
+    if (!dir) { return false; }
+
+    closedir(dir);
+    return true;
 }
 
 #endif
@@ -73,4 +109,19 @@ char* get_basename(char *abs_path) {
     }
 
     return last_slash ? strdup_cross(++last_slash) : strdup_cross(abs_path);
+}
+
+bool is_path_valid(const char *path) {
+    if (path == NULL || *path == '\0') {
+        LOG_ERROR("NULL path or empty string was provided, can't validate");
+        return false;
+    }
+
+    #ifdef _MSC_VER
+    return is_path_valid_win(strdup_cross(path));
+    
+    #else
+    return is_path_valid_unix(strdup_cross(path));
+
+    #endif
 }

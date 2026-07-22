@@ -7,6 +7,6 @@
 char* locate_vcpkg_lib();
 #endif
 
-bool is_mimalloc_available(CompilerConfig *cfg, char *restrict out);
+bool is_mimalloc_available(CompilerConfig *cfg, char *out);
 
 #endif

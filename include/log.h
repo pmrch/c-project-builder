@@ -55,8 +55,8 @@ PRINTF_LIKE(6, 7);
 
 #define LOG_ERROR(fmt, ...) log_internal("ERROR", "\x1b[31m", NULL, NULL, NULL, fmt, ##__VA_ARGS__)
 #define LOG_WARN(fmt, ...)  log_internal("WARN",  "\x1b[33m", NULL, NULL, NULL, fmt, ##__VA_ARGS__)
-#define LOG_INFO(fmt, ...)  log_internal("INFO",  "\x1b[32m", NULL, NULL, NULL, fmt, ##__VA_ARGS__)
-#define LOG_DEBUG(fmt, ...)  log_internal("INFO",  "\x1b[32m", NULL, NULL, NULL, fmt, ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...)
+#define LOG_DEBUG(fmt, ...)
 #endif
 
 #endif

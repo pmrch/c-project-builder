@@ -22,26 +22,45 @@ LDFLAGS = -flto
 # Target definition
 SRC := $(shell find src -name '*.c')
 OBJ := $(patsubst src/%.c,build/%.o,$(SRC))
-TARGET = build_c_project
+TARGET = pbuild
 
+# Target tests definition
+# Test definition (Automatically finds all test files in tests/)
+TEST_SRC := $(shell find tests -name '*.c')
+TEST_BIN := $(patsubst tests/%.c,build/tests/%,$(TEST_SRC))
+
+# Main application target
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) $(LDFLAGS) -o $@
 
 print-version:
 	@$(CC) --version
 
+# Compile core source files into build/src/
 build/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Automatically compile and link each test file with necessary core objects
+# (Excludes main.o from SRC objects if your main function is in src/main.c)
+build/tests/%: tests/%.c $(filter-out build/src/main.o, $(OBJ))
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+test: $(TEST_BIN)
+	@echo "Runnin all automated tests..."
+	@for t in $(TEST_BIN); do \
+		echo "==============================================="; \
+		./$$t || exit 1; \
+	done
+	
 clean:
 	rm -f $(TARGET)
 	rm -rf compile_commands.json
 	rm -rf build
 
-all: compile_commands 
+all: compile_commands $(TARGET)
 
-.PHONY: clean
-.PHONY: compile_commands $(TARGET)
+.PHONY: clean test print-version all compile_commands
 compile_commands:
 	bear -- make

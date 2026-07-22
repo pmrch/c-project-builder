@@ -8,16 +8,20 @@
 #include "config.h"
 #include "parser.h"
 
+
 static i32 verify_arguments(const char *restrict const *argv, const i32 argc) {
-    char **invalid_flags = malloc(argc * sizeof(argv[0]));
+    char **invalid_flags = malloc((usize)argc * sizeof(argv[0]));
     if (invalid_flags == NULL) {
         LOG_ERROR("Failed to allocate memory for ");
+        return -1;
     }
 
     for (i32 i = 0; i < argc; i++) {
-        const char *arg = invalid_flags[i];
+        const char *arg = argv[i];
+        
+        if (arg[0] != '-' ) {
 
-        if (arg[0] != '-' )
+        }
     }
 
     return 0;

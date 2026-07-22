@@ -17,6 +17,6 @@ typedef struct {
     bool        use_system_mimalloc;
 } CompilerOptions;
 
-CompilerOptions* parse_compiler_flags(const int argc, const char *restrict *argv);
+CompilerOptions* parse_compiler_flags(const int argc, const char **argv);
 
 #endif

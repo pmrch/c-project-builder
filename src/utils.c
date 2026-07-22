@@ -72,7 +72,7 @@ char *strdup_cross(const char *str) {
     #endif
 }
 
-char** clone_string_array_mutable(const char *restrict *arr, usize num_elem) {
+char** clone_string_array_mutable(const char **arr, usize num_elem) {
     char **mutable_arr = malloc((num_elem + 1) * sizeof(char*));
     if (mutable_arr == NULL) {
         LOG_ERROR("Failed to allocate memory for the copy of the array!");
@@ -98,10 +98,10 @@ FILE* fopen_cross(const char *restrict path, const char *restrict mode) {
     #endif
 }
 
-int strcat_cross(char *restrict dest, usize dest_size, const char *restrict src) {
+i32 strcat_cross(char *restrict dest, usize dest_size, const char *restrict src) {
     #ifdef _MSC_VER
     errno_t result = strcat_s(dest, dest_size, src);
-    return (int)result;
+    return (i32)result;
 
     #else
     (void)dest_size;
@@ -111,7 +111,7 @@ int strcat_cross(char *restrict dest, usize dest_size, const char *restrict src)
     #endif
 }
 
-int create_test_file() {
+i32 create_test_file() {
     FILE *f = fopen_cross("test.c", "w");
     if (f != NULL) {
         fprintf(f, "int main(void) { return 0; }\n");
@@ -194,11 +194,11 @@ void strip_quotes(char *restrict str) {
     *write_ptr = '\0';
 }
 
-void free_mutable_cloned_string_array(char *restrict *arr) {
-    char **p = (char **)arr;
+void free_mutable_cloned_string_array(char **arr) {
+    char **p = arr;
     while (*p != NULL) {
         free(*p++);
     }
 
-    free((char **)arr);
+    free(arr);
 }

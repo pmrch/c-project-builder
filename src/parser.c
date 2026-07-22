@@ -1,9 +1,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if !defined(_MSC_VER)
+#include <dirent.h>
+#endif
+
 #include "parser.h"
 #include "flags.h"
 #include "utils.h"
+#include "path.h"
 #include "log.h"
 
 #define COMPILER_FLAGS_SIZE 2048
@@ -25,8 +30,6 @@ static void set_strictness(char *restrict strictness, CompilerOptions *opts) {
 }
 
 static void set_config(char *restrict config, CompilerOptions *opts) {
-    to_lowercase(config);
-
     if (strncmp(config, "release", 7) == 0) { opts->config = Release; } 
     else if (strncmp(config, "debug", 5) == 0) { opts->config = Debug; } 
     else {
@@ -38,18 +41,17 @@ static void set_config(char *restrict config, CompilerOptions *opts) {
 }
 
 static void set_compiler(char *restrict compiler, CompilerOptions *opts) {
-    to_lowercase(compiler);
     if (!is_compiler_valid(compiler)) {
         LOG_WARN("Invalid compiler '%s' provided, using system default", compiler);
 
-        #ifdef __GNUC__
+        #ifdef _MSC_VER
+        opts->compiler = "cl.exe";
+
+        #elif defined(__GNUC__)
         opts->compiler = "gcc";
 
         #elif defined(__clang__)
         opts->compiler = "clang";
-
-        #elif defined(_MSC_VER)
-        opts->compiler = "cl.exe";
 
         #endif
     } else {
@@ -65,7 +67,6 @@ static void set_lang(char *restrict lang, CompilerOptions *opts) {
         return;
     }
 
-    to_lowercase(lang);
     bool is_c = strcmp(lang, "c") == 0;
     bool is_cpp = strncmp(lang, "c++", 3) == 0
         || strncmp(lang, "cpp", 3) == 0
@@ -85,7 +86,10 @@ static void set_lang(char *restrict lang, CompilerOptions *opts) {
 // mimalloc library .a/.so/.lib file(s)
 static void set_mimalloc(char *restrict path, CompilerOptions *opts) {
     #if !defined(_WIN32) && !defined(_WIN64)
-    if ()
+    if (!is_path_valid(path)) {
+        LOG_WARN("Provided path <%s> was invalid! Can't look for mimalloc.", path);
+        return;
+    }
     
     #else
     
@@ -93,7 +97,7 @@ static void set_mimalloc(char *restrict path, CompilerOptions *opts) {
     #endif
 }
 
-CompilerOptions* parse_compiler_flags(const int argc, const char *restrict *argv) {
+CompilerOptions* parse_compiler_flags(const int argc, const char **argv) {
     CompilerOptions *opts = calloc(1, sizeof(CompilerOptions));
     if (opts == NULL) {
         LOG_ERROR("Failed to allocate memory for CompilerOptions!");
@@ -113,7 +117,11 @@ CompilerOptions* parse_compiler_flags(const int argc, const char *restrict *argv
     while (*++argv_p != NULL) {
         strip_quotes(*argv_p);
         char *value = strrchr(*argv_p, '=');
-        if (value != NULL) { ++value; }
+        
+        if (value != NULL) { 
+            ++value; 
+            to_lowercase(value);
+        }
 
         if (strncmp(*argv_p, "--with-system-mimalloc", 23) == 0 && !opts->use_system_mimalloc) {
             opts->use_system_mimalloc = true;
