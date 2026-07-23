@@ -1,11 +1,14 @@
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
+#include "config.h"
 #include "flags.h"
 #include "utils.h"
+#include "path.h"
 #include "log.h"
 
-u8 validate_strictness(const char* level_str) {
+Strictness validate_strictness(const char* level_str) {
     char *end;
 
     errno = 0;
@@ -29,4 +32,12 @@ const char* delegate_strictness_flags(const Strictness level) {
     if (level == Lint) { return LINT_FLAGS; }
     
     return " ";
+}
+
+const char* join_cflags(const CompilerOptions *opts) {
+    char cflags[PATH_MAX] = { 0 };
+
+    if (opts->compiler_set) {
+        
+    }
 }

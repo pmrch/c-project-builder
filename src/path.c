@@ -5,10 +5,6 @@
 #include "path.h"
 #include "utils.h"
 
-#ifndef PATH_MAX
-    #define PATH_MAX 4096
-#endif
-
 // Support both Windows and Linux
 #ifdef _MSC_VER
 #include <direct.h>

@@ -5,7 +5,12 @@
 #include "utils.h"
 
 typedef struct {
-    const char  *compiler;
+    const char *cc;
+    const char *cxx;
+} Compiler;
+
+typedef struct {
+    Compiler    compiler;
     const char  *mimalloc_lib_path; // Library search path for mimalloc (-L or /LIBPATH:)
     Lang        lang;  
     Config      config;

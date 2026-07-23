@@ -1,3 +1,4 @@
+#include "parser.h"
 #include "utils.h"
 
 #ifdef __clang__
@@ -63,5 +64,6 @@
     #define DEBUG_FLAGS_LNK "/DEBUG /fsanitize:address"
 #endif
 
-u8 validate_strictness(const char* level_str);
+Strictness validate_strictness(const char *level_str);
 const char* delegate_strictness_flags(const Strictness level);
+const char* join_cflags(const CompilerOptions *opts);

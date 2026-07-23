@@ -14,14 +14,26 @@
 #define COMPILER_FLAGS_SIZE 2048
 
 static bool is_compiler_valid(const char *str) {
-    const char* const valid_compilers[] = { "gcc", "clang", "cl" };
-    for (usize i = 0; i < 3; i++) {
+    const char* const valid_compilers[] = { "gcc", "clang", "cl", "g++", "clang++" };
+    for (usize i = 0; i < sizeof(valid_compilers) / sizeof(valid_compilers[0]); i++) {
         if (strncmp(str, valid_compilers[i], strlen(valid_compilers[i])) == 0) {
             return true;
         }
     }
 
     return false;
+}
+
+static Compiler pair_compiler(const char *compiler) {
+    if (strcmp(compiler, "gcc") == 0) { return (Compiler){ .cc="gcc", .cxx="g++" }; }
+    if (strcmp(compiler, "clang") == 0) { return (Compiler){ .cc="clang", .cxx="clang++" }; }
+    if (strcmp(compiler, "cl") == 0) { return (Compiler){ .cc="cl.exe", .cxx="cl.exe" }; }
+
+    if (strcmp(compiler, "clang++") == 0) { return (Compiler){ .cc="clang", .cxx="clang++" }; }
+    if (strcmp(compiler, "g++") == 0) { return (Compiler){ .cc="gcc", .cxx="g++" }; }
+
+    LOG_WARN("Compiler was not defined! Returning empty strings");
+    return (Compiler){ .cc="", .cxx="" };
 }
 
 static void set_strictness(char *restrict strictness, CompilerOptions *opts) {
@@ -45,17 +57,17 @@ static void set_compiler(char *restrict compiler, CompilerOptions *opts) {
         LOG_WARN("Invalid compiler '%s' provided, using system default", compiler);
 
         #ifdef _MSC_VER
-        opts->compiler = "cl.exe";
+        opts->compiler = (Compiler){ .cc="cl.exe", .cxx="cl.exe" };
 
         #elif defined(__GNUC__)
-        opts->compiler = "gcc";
+        opts->compiler = (Compiler){ .cc="gcc", .cxx="g++" };
 
         #elif defined(__clang__)
-        opts->compiler = "clang";
+        opts->compiler = (Compiler){ .cc="clang", .cxx="clang++" };
 
         #endif
     } else {
-        opts->compiler = compiler;
+        opts->compiler = pair_compiler(compiler);
     }
 
     opts->compiler_set = true;
@@ -88,9 +100,12 @@ static void set_mimalloc(char *restrict path, CompilerOptions *opts) {
     #if !defined(_WIN32) && !defined(_WIN64)
     if (!is_path_valid(path)) {
         LOG_WARN("Provided path <%s> was invalid! Can't look for mimalloc.", path);
+        opts->use_system_mimalloc = true;
         return;
     }
-    
+
+    opts->mimalloc_lib_path = path;
+    opts->use_system_mimalloc = false;
     #else
     
 
